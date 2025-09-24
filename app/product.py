@@ -9,19 +9,22 @@ class Product:
         self.category_ids = category_ids or []
         self.image_ids = image_ids or []
 
-    def get_product_name(self, uuid):
-        if self.product_id == uuid:
-            return self.product_name
-        return None
-
-    def update_quantity(self, quantity):
-        self.product_quantity = quantity
-
-    def update_price(self, price):
-        self.product_price = price
-    
     def add_supplier(self, supplier_id):
         self.supplier_ids.append(supplier_id)
+    
+    def remove_supplier(self, supplier_id):
+        self.supplier_ids.remove(supplier_id)
 
     def add_category(self, category_id):
         self.category_ids.append(category_id)
+
+    def remove_category(self, category_id):
+        self.category_ids.remove(category_id)
+
+    def add_image(self, image_id):
+        self.image_ids.append(image_id)
+
+    def remove_image(self, image_id):
+        self.image_ids.remove(image_id)
+
+    

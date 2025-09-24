@@ -5,4 +5,8 @@ class Category:
         self.category_description = category_description
         self.product_ids = product_ids or []
 
-        
+        def add_product(self, product_id):
+            self.product_ids.append(product_id)
+
+        def remove_product(self, product_id):
+            self.product_ids.remove(product_id)
