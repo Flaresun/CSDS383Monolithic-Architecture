@@ -8,3 +8,13 @@ class Product:
         self.supplier_ids = supplier_ids or []
         self.category_ids = category_ids or []
         self.image_ids = image_ids or []
+
+    def get_product_name(self, uuid):
+        if self.product_id == uuid:
+            return self.product_name
+        return None
+
+    def update_quantity(self, quantity):
+        self.product_quantity = quantity
+
+    
