@@ -17,4 +17,11 @@ class Product:
     def update_quantity(self, quantity):
         self.product_quantity = quantity
 
+    def update_price(self, price):
+        self.product_price = price
     
+    def add_supplier(self, supplier_id):
+        self.supplier_ids.append(supplier_id)
+
+    def add_category(self, category_id):
+        self.category_ids.append(category_id)
