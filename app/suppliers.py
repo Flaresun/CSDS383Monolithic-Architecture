@@ -73,15 +73,6 @@ def _fetch_supplier(cur: sqlite3.Cursor, supplier_id: str) -> Supplier:
         product_ids=prod_ids,
     )
 
-def _delete_supplier_if_unused(conn: sqlite3.Connection, supplier_id: str) -> None:
-    cur = conn.cursor()
-    linked = cur.execute(
-        "SELECT 1 FROM product_suppliers WHERE supplier_id = ? LIMIT 1",
-        (supplier_id,),
-    ).fetchone()
-    if linked is None:
-        cur.execute("DELETE FROM suppliers WHERE id = ?", (supplier_id,))
-
 # Public API (CRUD) 
 def create_supplier(
     conn: sqlite3.Connection,
@@ -104,12 +95,6 @@ def create_supplier(
 def read_supplier(conn: sqlite3.Connection, supplier_id: str) -> Supplier:
     _require_uuid(supplier_id, "supplier_id")
     return _fetch_supplier(conn.cursor(), supplier_id)
-
-def list_suppliers(conn: sqlite3.Connection) -> Iterable[Supplier]:
-    cur = conn.cursor()
-    ids = cur.execute("SELECT id FROM suppliers ORDER BY name").fetchall()
-    for (sid,) in ids:
-        yield _fetch_supplier(cur, sid)
 
 def update_supplier(
     conn: sqlite3.Connection,
@@ -162,8 +147,7 @@ def add_product_to_supplier(
         )
 
 def remove_product_from_supplier(
-    conn: sqlite3.Connection, supplier_id: str, product_id: str, *,
-    delete_supplier_if_unused: bool = True
+    conn: sqlite3.Connection, supplier_id: str, product_id: str
 ) -> None:
     _require_uuid(supplier_id, "supplier_id")
     _require_uuid(product_id, "product_id")
@@ -172,5 +156,3 @@ def remove_product_from_supplier(
             "DELETE FROM product_suppliers WHERE product_id = ? AND supplier_id = ?",
             (product_id, supplier_id),
         )
-        if delete_supplier_if_unused:
-            _delete_supplier_if_unused(conn, supplier_id)
