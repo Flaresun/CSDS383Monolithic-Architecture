@@ -2,8 +2,12 @@ import uuid
 import sqlite3
 import product
 import image
-import suppliers
+import supplier
 import category
+from supplier import (
+    create_supplier, read_supplier, update_supplier,
+    delete_supplier, add_product_to_supplier, remove_product_from_supplier
+)
 conn = sqlite3.connect(":memory:")
 cur = conn.cursor()
 
@@ -52,8 +56,6 @@ cur.execute("""
     )
 """)
 
-
-
 # CLI Loop
 if __name__ == "__main__":
     print("\n************************************ CLI RUNNING ************************************\n")
@@ -64,7 +66,50 @@ if __name__ == "__main__":
         if class_to_create == "product":
             pass
         elif class_to_create == "supplier":
-            pass
+            action = input("Supplier: Create, Read, Update, Delete, AddProduct, RemoveProduct: ").strip().lower()
+            try:
+                if action == "create":
+                    name = input("Supplier Name: ").strip()
+                    email = input("Supplier Contact Email: ").strip()
+                    sid = create_supplier(conn, name, email)
+                    print(f"Created Supplier Id: {sid}")
+                elif action == "read":
+                    sid = input("Supplier Id (UUID): ").strip()
+                    s = read_supplier(conn, sid)
+                    print({
+                        "supplier_id": s.supplier_id,
+                        "supplier_name": s.supplier_name,
+                        "supplier_contact": s.supplier_contact,
+                        "product_ids": s.product_ids,
+                    })
+                elif action == "update":
+                    sid = input("Supplier Id (UUID): ").strip()
+                    new_name = input("New Name (blank = no change): ").strip()
+                    new_email = input("New Email (blank = no change): ").strip()
+                    kwargs = {}
+                    if new_name: kwargs["supplier_name"] = new_name
+                    if new_email: kwargs["supplier_contact"] = new_email
+                    update_supplier(conn, sid, **kwargs)
+                    print("Supplier updated")
+                elif action == "delete":
+                    sid = input("Supplier Id (UUID): ").strip()
+                    delete_supplier(conn, sid)
+                    print("Supplier deleted")
+                elif action == "addproduct":
+                    sid = input("Supplier Id (UUID): ").strip()
+                    pid = input("Product Id (UUID from 'Products' table): ").strip()
+                    add_product_to_supplier(conn, sid, pid)
+                    print("Product linked to supplier")
+                elif action == "removeproduct":
+                    sid = input("Supplier Id (UUID): ").strip()
+                    pid = input("Product Id (UUID from 'Products' table): ").strip()
+                    remove_product_from_supplier(conn, sid, pid)
+                    print("Product unlinked from supplier")
+                else:
+                    print("Please choose: Create, Read, Update, Delete, AddProduct, RemoveProduct")
+            except (ValueError, KeyError) as e:
+                print(f"Error: {e}")
+        
         
         elif class_to_create == "category":
 
