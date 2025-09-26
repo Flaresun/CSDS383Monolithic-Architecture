@@ -3,7 +3,7 @@ import re, sqlite3, uuid
 from dataclasses import dataclass, field
 from typing import Iterable, List, Optional
 
-# ---------------- Validation ----------------
+# Validation 
 UUID_RX = re.compile(
     r'^[0-9a-fA-F]{8}-'
     r'[0-9a-fA-F]{4}-'
@@ -24,6 +24,7 @@ def _require_email(x: str) -> None:
     if not EMAIL_RX.fullmatch(x or ""):
         raise ValueError("supplier_contact must be a valid email address")
 
+@dataclass
 class Supplier:
     supplier_id: str
     supplier_name: str
