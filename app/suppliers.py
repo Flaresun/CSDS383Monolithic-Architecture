@@ -25,14 +25,59 @@ def _require_email(x: str) -> None:
         raise ValueError("supplier_contact must be a valid email address")
 
 class Supplier:
-    def __init__(self, supplier_id, supplier_name, supplier_contact, product_ids=None):
-        self.supplier_id = supplier_id
-        self.supplier_name = supplier_name
-        self.supplier_contact = supplier_contact
-        self.product_ids = product_ids or []
+    supplier_id: str
+    supplier_name: str
+    supplier_contact: str
+    product_ids: List[str] = field(default_factory=list)
 
-        def add_product(self, product_id):
-            self.product_ids.append(product_id)
+    def to_dict(self) -> dict:
+        return {
+            "supplier_id": self.supplier_id,
+            "supplier_name": self.supplier_name,
+            "supplier_contact": self.supplier_contact,
+            "product_ids": list(self.product_ids),
+        }
 
-        def remove_product(self, product_id):
-            self.product_ids.remove(product_id)    
+# Internal helpers 
+def _supplier_exists(cur: sqlite3.Cursor, supplier_id: str) -> bool:
+    return cur.execute(
+        "SELECT 1 FROM suppliers WHERE id = ? LIMIT 1", (supplier_id,)
+    ).fetchone() is not None
+
+def _product_exists(cur: sqlite3.Cursor, product_id: str) -> bool:
+    return cur.execute(
+        "SELECT 1 FROM products WHERE id = ? LIMIT 1", (product_id,)
+    ).fetchone() is not None
+
+def _fetch_supplier(cur: sqlite3.Cursor, supplier_id: str) -> Supplier:
+    row = cur.execute(
+        "SELECT id, name, contact_email FROM suppliers WHERE id = ?",
+        (supplier_id,),
+    ).fetchone()
+    if not row:
+        raise KeyError(f"Supplier {supplier_id} not found")
+
+    sid, name, email = row
+    prod_ids = [
+        r[0]
+        for r in cur.execute(
+            "SELECT product_id FROM product_suppliers WHERE supplier_id = ?",
+            (supplier_id,),
+        ).fetchall()
+    ]
+    return Supplier(
+        supplier_id=sid,
+        supplier_name=name,
+        supplier_contact=email,
+        product_ids=prod_ids,
+    )
+
+def _delete_supplier_if_unused(conn: sqlite3.Connection, supplier_id: str) -> None:
+    """Optional 'no orphan suppliers' cleanup after unlink."""
+    cur = conn.cursor()
+    linked = cur.execute(
+        "SELECT 1 FROM product_suppliers WHERE supplier_id = ? LIMIT 1",
+        (supplier_id,),
+    ).fetchone()
+    if linked is None:
+        cur.execute("DELETE FROM suppliers WHERE id = ?", (supplier_id,))
