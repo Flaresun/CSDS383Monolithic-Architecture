@@ -94,7 +94,7 @@ if __name__ == "__main__":
                 elif action == "delete":
                     sid = input("Supplier Id (UUID): ").strip()
                     delete_supplier(conn, sid)
-                    print("Supplier deleted")
+                    print("Supplier deleted (and any linked products/images/categories were cleaned up).")
                 elif action == "addproduct":
                     sid = input("Supplier Id (UUID): ").strip()
                     pid = input("Product Id (UUID from 'Products' table): ").strip()
