@@ -19,12 +19,39 @@ class Product:
         )
         return bool(UUID_Check.fullmatch(id))
 
-    def set_category_id(self,id):
+    def set_product_id(self,id):
         # Id must be a UUID
         if not self.isUUID(id):
             print("ID must be a UUID")
             return 
-        self.category_id = id
+        self.product_id = id
+    
+    def get_product_id(self):
+        return self.product_id
+    
+    def get_product_name(self):
+        return self.product_name
+    
+    def get_product_description(self):
+        return self.product_description
+
+    def get_product_quantity(self):
+        return self.product_quantity
+
+    def get_product_price(self):
+        return self.product_price
+
+    def set_product_name(self, name):
+        self.product_name = name
+    
+    def set_product_description(self, description):
+        self.product_description = description
+
+    def set_product_quantity(self, quantity):
+        self.product_quantity = quantity
+
+    def set_product_price(self, price):
+        self.product_price = price
     
     def add_supplier(self, supplier_id):
         self.supplier_ids.append(supplier_id)
@@ -43,5 +70,8 @@ class Product:
 
     def remove_image(self, image_id):
         self.image_ids.remove(image_id)
+
+    def __str__(self):
+        return f"Product: Id='{self.product_id}', Name='{self.product_name}', Description='{self.product_description}', Quantity='{self.product_quantity}', Price='{self.product_price}' "
 
     

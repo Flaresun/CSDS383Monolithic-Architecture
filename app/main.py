@@ -87,6 +87,24 @@ if __name__ == "__main__":
                         """, (product_id, name, desc, quantity, price, "[]", "[]", "[]"))
                         conn.commit()
                     print(f"Created Product with ID: {product_id}")
+                qlif command == "read":
+                    product_id = input("Product Id (UUID): ").strip()
+                    if product_id:
+                        cur.executre("SELECT * FROM Products WHERE Product_Id = ?", (product_id,))
+                        output = cur.fetchone()
+                        if output:
+                            print({
+                                "product_id": output[0],
+                                "product_name": output[1],
+                                "product_description": output[2],
+                                "product_quantity": output[3],
+                                "product_price": output[4],
+                                "supplier_ids": output[5],
+                                "category_ids": output[6],
+                                "image_ids": output[7],
+                            })
+                        else:
+                            print("Product Id not found")
         elif class_to_create == "supplier":
             action = input("Supplier: Create, Read, Update, Delete, AddProduct, RemoveProduct: ").strip().lower()
             try:
