@@ -2,7 +2,7 @@ import uuid
 import sqlite3
 import product
 import image
-import supplier
+import suppliers
 import category
 conn = sqlite3.connect(":memory:")
 cur = conn.cursor()
@@ -35,7 +35,7 @@ cur.execute("""
 
 ## Create Category data 
 cur.execute("""
-    CREATE TABLE IF NOT EXISTS Categories (
+    CREATE TABLE IF NOT EXISTS Category (
         Category_Id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
         Category_Name TEXT NOT NULL,
         Category_Description TEXT,
@@ -56,26 +56,23 @@ cur.execute("""
 
 # CLI Loop
 if __name__ == "__main__":
-    print("************************************ CLI RUNNING ************************************")
+    print("\n************************************ CLI RUNNING ************************************\n")
     while True:
         class_to_create  = str(input("What would you like to add? (Product, Image, Supplier, or Category): "))
         class_to_create = class_to_create.replace(" ", "").lower()
         
         if class_to_create == "product":
-            Product = product()
-        
+            pass
         elif class_to_create == "supplier":
-            Supplier = supplier()
-        
+            pass
         
         elif class_to_create == "category":
-            Category = category()
 
-            command = str(input("Category Class: Create, Read, Update, Delete"))
+            command = input("Category Class: Create, Read, Update, Delete: ")
             command = command.replace(" ", "").lower()
 
             if command == "create":
-                items = input("Enter your category_name, category_desc, and product id. (Can leave null)")
+                items = input("Enter your category_name, category_desc, and product id. (Can leave null): ")
 
                 parts = [p.strip() for p in items.split(",")]
 
@@ -89,12 +86,10 @@ if __name__ == "__main__":
                 print(f"ID of created Category: {new_id}")
 
             elif command == "read":
-                id = input("Enter the Category Id")
-                cur.execute(f"SELECT Category_Id FROM Category WHERE Category_Id = ? ",(id,))
-                row = cur.fetchone()
-                if not row:
-                    print("Category Id does not exist")
-                print(f"Category with Id {id} : {row}")
+                cur.execute("SELECT * FROM Category")
+                rows = cur.fetchall()
+                for row in rows:
+                    print(row)
 
             elif command == "update":
                 cat_id = input("Enter the Category Id: ").strip()
@@ -133,8 +128,8 @@ if __name__ == "__main__":
 
 
             elif command == "delete":
-                id = input("Enter the Category Id")
-                cur.execute(f"DELETE Category_Id FROM Category WHERE Category_Id = ? ",(id,))
+                id = input("Enter the Category Id: ")
+                cur.execute(f"DELETE FROM Category WHERE Category_Id = ? ",(id,))
                 conn.commit()
                 
                 if cur.rowcount == 0:
@@ -146,7 +141,80 @@ if __name__ == "__main__":
                 print("Please select a valid command")
 
         elif class_to_create == "image":
-            Image = image()
+
+            command = input("Category Class: Create, Read, Update, Delete")
+            command = command.replace(" ", "").lower()
+
+            if command == "create":
+                product_id = input("Enter Product Id: ").strip()
+                image_url = input("Enter Image URL: ").strip()
+
+                # Verify product_id exists in product table 
+                cur.execute("SELECT Product_Id FROM Products where Product_Id = ? ",(product_id))
+                res = cur.fetchone()
+
+                if not res:
+                    print("Product Id does not exist. Cannot create image.")
+                    continue
+                image_id = str(uuid.uuid4())  # or let SQLite default generate it
+                cur.execute("""
+                    INSERT INTO Images (Image_Id, Product_Id, Image_URL)
+                    VALUES (?, ?, ?)
+                """, (image_id, product_id, image_url))
+                conn.commit()
+                print("Created Image with ID:", image_id)
+            elif command == "read":
+                    cur.execute("SELECT * FROM Images")
+                    rows = cur.fetchall()
+                    for row in rows:
+                        print(row)
+            elif command == "update":
+                    image_id = input("Enter Image Id to update: ").strip()
+                    new_url = input("Enter new Image URL: ").strip()
+                    new_product_id = input("Enter new product Id: ").strip()
+
+                    # Verify product_id exists in product table 
+                    if new_product_id:
+                        cur.execute("SELECT Product_Id FROM Products where Product_Id = ? ",(new_product_id,))
+                        res = cur.fetchone()
+
+                        if not res:
+                            print("Product Id does not exist. Cannot create image.")
+                            continue
+                        
+                        cur.execute("UPDATE Images SET Image_URL = ?,Product_Id=? WHERE Image_Id = ?", (new_url,new_product_id, image_id))
+                        conn.commit()
+                        if cur.rowcount == 0:
+                            print("Image Id not found")
+                        else:
+                            print("Image updated")
+                        continue
+
+                    cur.execute("UPDATE Images SET Image_URL = ? WHERE Image_Id = ?", (new_url, image_id))
+                    conn.commit()
+                    if cur.rowcount == 0:
+                        print("Image Id not found")
+                    else:
+                        print("Image updated")
+                          
+            elif command == "delete":
+                    image_id = input("Enter Image Id to delete: ").strip()
+                    cur.execute("DELETE FROM Images WHERE Image_Id = ?", (image_id,))
+                    conn.commit()
+                    # Also make sure it gets deleted from products 
+
+                    if cur.rowcount == 0:
+                        print("Image Id not found")
+                    else:
+                        print("Image deleted")
+                        # Delete from products as well 
+                        cur.execute("""
+                            DELETE FROM Products
+                            WHERE ',' || Image_Ids || ',' LIKE '%,' || ? || ',%'
+                        """, (image_id,))
+                        conn.commit()
+            else:
+                print("Please select a valid command")
 
         else:
             print("Please select an option from (Product, Image, Supplier, or Category)")
