@@ -16,7 +16,7 @@ cur.execute("""
     CREATE TABLE IF NOT EXISTS Products (
         Product_Id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
         Product_Name TEXT NOT NULL,
-        Git TEXT,
+        Product_Description TEXT,
         Product_Quantity INTEGER NOT NULL CHECK (Product_Quantity >= 0),
         Product_Price REAL NOT NULL CHECK (Product_Price > 0),
         Supplier_Ids TEXT DEFAULT '[]',   -- store JSON array
@@ -82,15 +82,15 @@ if __name__ == "__main__":
                     
                     product_id = str(uuid.uuid4())
                     cur.execute("""
-                        INSERT INTO Products (Product_Id, Product_Name, Product_Description, Product_Quantity, Product_Price, Supplier_Ids, Category_Ids, Image_Ids, Image_Ids)
+                        INSERT INTO Products (Product_Id, Product_Name, Product_Description, Product_Quantity, Product_Price, Supplier_Ids, Category_Ids, Image_Ids)
                         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                         """, (product_id, name, desc, quantity, price, "[]", "[]", "[]"))
-                        conn.commit()
+                    conn.commit()
                     print(f"Created Product with ID: {product_id}")
-                qlif command == "read":
+                elif command == "read":
                     product_id = input("Product Id (UUID): ").strip()
                     if product_id:
-                        cur.executre("SELECT * FROM Products WHERE Product_Id = ?", (product_id,))
+                        cur.execute("SELECT * FROM Products WHERE Product_Id = ?", (product_id,))
                         output = cur.fetchone()
                         if output:
                             print({
@@ -105,6 +105,90 @@ if __name__ == "__main__":
                             })
                         else:
                             print("Product Id not found")
+                elif command == "update":
+                    product_id = input("Product Id (UUID): ").strip()
+
+                    cur.execute("SELECT * FROM Products WHERE Product_Id = ?", (product_id,))
+                    if not cur.fetchone():
+                        print("Product Id does not exist")
+                        continue
+                    
+                    name = input("New Product Name (leave blank if no change): ").strip()
+                    desc = input("New Product Description (leave blank if no change): ").strip()
+                    quantity = input("New Product Quantity (leave blank if no change): ").strip()
+                    price = input("New Product Price (leaeve blank if no change): ").strip()
+
+                    updates = []
+                    values = []
+
+                    if name:
+                        updates.append("Product_Name = ?")
+                        values.append(name)
+
+                    if desc:
+                        updates.append("Product_Description = ?")
+                        values.append(desc)
+                    
+                    if quantity:
+                        try:
+                            quantity = int(quantity)
+                            if quantity < 0:
+                                print("Quantity must be >= 0")
+                                continue
+                            updates.append("Product_Quantity = ?")
+                            values.append(quantity)
+                        except ValueError:
+                            print("Quantity must be an integer")
+                            continue
+
+                    if  price:
+                        try:
+                            price = float(price)
+                            if price <= 0:
+                                print("Price must be > 0")
+                                continue
+                            updates.append("Product_Price = ?")
+                            values.append(price)
+                        except ValueError:
+                            print("Price must be a float")
+                            continue
+                        
+                    if updates:
+                        values.append(product_id)
+                        sql = f"UPDATE Products SET {', '.join(updates)} WHERE Product_Id = ?"
+                        cur.execute(sql, tuple(values))
+                        conn.commit()
+                        print("Product updated")
+                    else:
+                        print("No updates provided")
+                elif command == "delete":
+                    product_id = input("Product Id (UUID): ").strip()
+                    cur.execute("SELECT Supplier_Id, Product_Ids FROM Suppliers")
+                    for sid, plist in cur.fetchall():
+                        lst = _load_json_list(plist)
+                        if product_id in lst:
+                            lst.remove(product_id)
+                            cur.execute("UPDATE Suppliers SET Product_Ids = ? WHERE Supplier_Id = ?", (_dump_json_list(lst), sid))
+                    
+                    cur.execute("SELECT Category_Id, Product_Ids FROM Category")
+                    for cid, plist in cur.fetchall():
+                        lst = _load_json_list(plist)
+                        if product_id in lst:
+                            lst.remove(product_id)
+                            if lst:
+                                cur.execute("UPDATE Category SET Product_Ids = ? WHERE Category_Id = ?", (_dump_json_list(lst), cid))
+
+                    cur.execute("DELETE FROM Images WHERE Product_Id = ?", (product_id,))
+                    cur.execute("DELETE FROM Products WHERE Product_Id = ?", (product_id,))
+                    conn.commit()
+
+                    if cur.rowcount == 0:
+                        print("Product not found")
+                else:
+                    print("Please choose: Create, Read, Update, Delete")
+
+            except (ValueError, KeyError) as e:
+                print(f"Error: {e}")
         elif class_to_create == "supplier":
             action = input("Supplier: Create, Read, Update, Delete, AddProduct, RemoveProduct: ").strip().lower()
             try:
