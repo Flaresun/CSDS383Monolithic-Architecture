@@ -181,6 +181,12 @@ if __name__ == "__main__":
                     print("Category Id does not exist")
                 else:
                     print(f"Category with Id {id} Deleted")
+                    # Delete from products as well 
+                    cur.execute("""
+                        DELETE FROM Products
+                        WHERE ',' || Product_Id || ',' LIKE '%,' || ? || ',%'
+                    """, (id,))
+                    conn.commit()
 
             else:
                 print("Please select a valid command")
