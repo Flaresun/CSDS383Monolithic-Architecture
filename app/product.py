@@ -9,6 +9,23 @@ class Product:
         self.category_ids = category_ids or []
         self.image_ids = image_ids or []
 
+    def isUUID(self,id):
+        UUID_Check = re.compile(
+            r'^[0-9a-fA-F]{8}-'
+            r'[0-9a-fA-F]{4}-'
+            r'[1-5][0-9a-fA-F]{3}-'
+            r'[89ABab][0-9a-fA-F]{3}-'
+            r'[0-9a-fA-F]{12}$'
+        )
+        return bool(UUID_Check.fullmatch(id))
+
+    def set_category_id(self,id):
+        # Id must be a UUID
+        if not self.isUUID(id):
+            print("ID must be a UUID")
+            return 
+        self.category_id = id
+    
     def add_supplier(self, supplier_id):
         self.supplier_ids.append(supplier_id)
     

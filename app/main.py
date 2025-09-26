@@ -64,7 +64,29 @@ if __name__ == "__main__":
         class_to_create = class_to_create.replace(" ", "").lower()
         
         if class_to_create == "product":
-            pass
+            command = input("Product Class: Create, Read, Update, Delete: ")
+
+            try:
+                if command == "create":
+                    name = input("Product Name: ").strip()
+                    desc = input("Product Description: ").strip()
+                    quantity = int(input("Product Quantity (integer >=0): ").strip())
+                    price = float(input("Product Price (float >0): ").strip())
+
+                    if quantity < 0:
+                        print("Quantity must be >= 0")
+                        continue
+                    if price <= 0:
+                        print("Price must be > 0")
+                        continue
+                    
+                    product_id = str(uuid.uuid4())
+                    cur.execute("""
+                        INSERT INTO Products (Product_Id, Product_Name, Product_Description, Product_Quantity, Product_Price, Supplier_Ids, Category_Ids, Image_Ids, Image_Ids)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                        """, (product_id, name, desc, quantity, price, "[]", "[]", "[]"))
+                        conn.commit()
+                    print(f"Created Product with ID: {product_id}")
         elif class_to_create == "supplier":
             action = input("Supplier: Create, Read, Update, Delete, AddProduct, RemoveProduct: ").strip().lower()
             try:
