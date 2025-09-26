@@ -78,6 +78,39 @@ def _fetch_supplier(cur: sqlite3.Cursor, supplier_id: str) -> Supplier:
         product_ids=_load_json_list(prod_json),
     )
 
+def _delete_product_cascade(conn: sqlite3.Connection, product_id: str) -> None:
+    """Delete a product and clean up images, categories, and other suppliers' lists."""
+    cur = conn.cursor()
+
+    # Remove product from all suppliers' Product_Ids
+    for sid, plist in cur.execute("SELECT Supplier_Id, Product_Ids FROM Suppliers").fetchall():
+        lst = _load_json_list(plist)
+        if product_id in lst:
+            lst.remove(product_id)
+            conn.execute(
+                "UPDATE Suppliers SET Product_Ids = ? WHERE Supplier_Id = ?",
+                (_dump_json_list(lst), sid),
+            )
+
+    # Remove product from all categories; delete category if now empty
+    for cid, plist in cur.execute("SELECT Category_Id, Product_Ids FROM Category").fetchall():
+        lst = _load_json_list(plist)
+        if product_id in lst:
+            lst.remove(product_id)
+            if lst:
+                conn.execute(
+                    "UPDATE Category SET Product_Ids = ? WHERE Category_Id = ?",
+                    (_dump_json_list(lst), cid),
+                )
+            else:
+                conn.execute("DELETE FROM Category WHERE Category_Id = ?", (cid,))
+
+    # Delete images belonging to this product
+    conn.execute("DELETE FROM Images WHERE Product_Id = ?", (product_id,))
+
+    # Finally delete the product itself
+    conn.execute("DELETE FROM Products WHERE Product_Id = ?", (product_id,))
+
 # Public API (CRUD) 
 def create_supplier(
     conn: sqlite3.Connection,
@@ -128,6 +161,7 @@ def update_supplier(
             raise KeyError(f"Supplier {supplier_id} not found")
 
 def delete_supplier(conn: sqlite3.Connection, supplier_id: str) -> None:
+    """Delete supplier, then delete every product that references it, cascading to images/categories."""
     _require_uuid(supplier_id, "supplier_id")
     cur = conn.cursor()
     row = cur.execute(
@@ -136,20 +170,13 @@ def delete_supplier(conn: sqlite3.Connection, supplier_id: str) -> None:
     if not row:
         raise KeyError(f"Supplier {supplier_id} not found")
     product_ids = _load_json_list(row[0])
+
     with conn:
+        # For each linked product, delete it and cascade
         for pid in product_ids:
-            prow = cur.execute(
-                "SELECT Supplier_Ids FROM Products WHERE Product_Id = ?", (pid,)
-            ).fetchone()
-            if not prow:
-                continue
-            sup_ids = _load_json_list(prow[0])
-            if supplier_id in sup_ids:
-                sup_ids.remove(supplier_id)
-                conn.execute(
-                    "UPDATE Products SET Supplier_Ids = ? WHERE Product_Id = ?",
-                    (_dump_json_list(sup_ids), pid),
-                )
+            _delete_product_cascade(conn, pid)
+
+        # Delete the supplier itself
         cur = conn.execute("DELETE FROM Suppliers WHERE Supplier_Id = ?", (supplier_id,))
         if cur.rowcount == 0:
             raise KeyError(f"Supplier {supplier_id} not found")
