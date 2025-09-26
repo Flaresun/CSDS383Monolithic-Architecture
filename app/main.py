@@ -67,7 +67,7 @@ if __name__ == "__main__":
             command = input("Product Class: Create, Read, Update, Delete: ")
 
             try:
-                if command == "create":
+                if command == "Create":
                     name = input("Product Name: ").strip()
                     desc = input("Product Description: ").strip()
                     quantity = int(input("Product Quantity (integer >=0): ").strip())
@@ -87,7 +87,7 @@ if __name__ == "__main__":
                         """, (product_id, name, desc, quantity, price, "[]", "[]", "[]"))
                     conn.commit()
                     print(f"Created Product with ID: {product_id}")
-                elif command == "read":
+                elif command == "Read":
                     product_id = input("Product Id (UUID): ").strip()
                     if product_id:
                         cur.execute("SELECT * FROM Products WHERE Product_Id = ?", (product_id,))
@@ -105,7 +105,7 @@ if __name__ == "__main__":
                             })
                         else:
                             print("Product Id not found")
-                elif command == "update":
+                elif command == "Update":
                     product_id = input("Product Id (UUID): ").strip()
 
                     cur.execute("SELECT * FROM Products WHERE Product_Id = ?", (product_id,))
@@ -161,7 +161,7 @@ if __name__ == "__main__":
                         print("Product updated")
                     else:
                         print("No updates provided")
-                elif command == "delete":
+                elif command == "Delete":
                     product_id = input("Product Id (UUID): ").strip()
                     cur.execute("SELECT Supplier_Id, Product_Ids FROM Suppliers")
                     for sid, plist in cur.fetchall():
