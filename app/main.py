@@ -125,6 +125,15 @@ if __name__ == "__main__":
                     parts.append("")
                 name, desc, product_ids = parts
 
+                # Verify product_id exists in product table 
+                if product_ids:
+                    cur.execute("SELECT Product_Id FROM Products where Product_Id = ? ",(product_ids,))
+                    res = cur.fetchone()
+
+                    if not res:
+                        print("Product Id does not exist. Cannot create image.")
+                        continue
+
                 new_id = str(uuid.uuid4())
                 cur.execute("INSERT INTO Category (Category_Id,Category_Name,Category_Description,Product_Ids) VALUES (?,?,?,?)", (new_id,name,desc,product_ids))
                 conn.commit()
@@ -193,7 +202,7 @@ if __name__ == "__main__":
 
         elif class_to_create == "image":
 
-            command = input("Category Class: Create, Read, Update, Delete")
+            command = input("Category Class: Create, Read, Update, Delete: ")
             command = command.replace(" ", "").lower()
 
             if command == "create":
@@ -201,7 +210,7 @@ if __name__ == "__main__":
                 image_url = input("Enter Image URL: ").strip()
 
                 # Verify product_id exists in product table 
-                cur.execute("SELECT Product_Id FROM Products where Product_Id = ? ",(product_id))
+                cur.execute("SELECT Product_Id FROM Products where Product_Id = ? ",(product_id,))
                 res = cur.fetchone()
 
                 if not res:
