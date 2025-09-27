@@ -6,9 +6,9 @@ import supplier
 import category
 from supplier import (
     create_supplier, read_supplier, update_supplier,
-    delete_supplier, add_product_to_supplier, remove_product_from_supplier
+    delete_supplier, add_product_to_supplier, remove_product_from_supplier, _load_json_list, _dump_json_list
 )
-conn = sqlite3.connect(":memory:")
+conn = sqlite3.connect("inventory.db")
 cur = conn.cursor()
 
 ## Create Product table
